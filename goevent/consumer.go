@@ -7,15 +7,15 @@ import (
 	"log"
 )
 
-type Consumer struct {
+type consumer struct {
 	queue    string
 	conn     *amqp.Connection
 	channel  *amqp.Channel
 	delivery <-chan amqp.Delivery
 }
 
-func NewConsumer(amqpURI string, queueName string) (*Consumer, error) {
-	c := &Consumer{
+func newConsumer(amqpURI string, queueName string) (*consumer, error) {
+	c := &consumer{
 		queue:    queueName,
 		conn:     nil,
 		channel:  nil,
@@ -56,7 +56,7 @@ func NewConsumer(amqpURI string, queueName string) (*Consumer, error) {
 	return c, nil
 }
 
-func (c *Consumer) Shutdown() error {
+func (c *consumer) shutdown() error {
 	// will close() the deliveries channel
 	if err := c.channel.Cancel(c.queue, true); err != nil {
 		return fmt.Errorf("Consumer cancel failed: %s", err)
@@ -76,12 +76,12 @@ func Subscribe(amqpURI string, queueName string, h interface{}) error {
 	if !ok {
 		return fmt.Errorf("eee")
 	}
-	c, err := NewConsumer(amqpURI, queueName)
+	c, err := newConsumer(amqpURI, queueName)
 	if err != nil {
 		fmt.Errorf("%s", err)
 	}
 	defer func() {
-		if err := c.Shutdown(); err != nil {
+		if err := c.shutdown(); err != nil {
 			log.Fatalf("error during shutdown: %s", err)
 		}
 	}()
