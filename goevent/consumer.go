@@ -14,6 +14,18 @@ type consumer struct {
 	delivery <-chan amqp.Delivery
 }
 
+type NotImplementHandlerError struct{}
+
+func (e NotImplementHandlerError) Error() string {
+	return fmt.Sprint("Must Implemenet Handle Method")
+}
+
+type MismatchMessageFormatError struct{}
+
+func (e MismatchMessageFormatError) Error() string {
+	return fmt.Sprint("Invalid Message Format Error")
+}
+
 func newConsumer(amqpURI string, queueName string) (*consumer, error) {
 	c := &consumer{
 		queue:    queueName,
@@ -74,11 +86,11 @@ func (c *consumer) shutdown() error {
 func Subscribe(amqpURI string, queueName string, h interface{}) error {
 	handler, ok := h.(Handler)
 	if !ok {
-		return fmt.Errorf("eee")
+		return NotImplementHandlerError{}
 	}
 	c, err := newConsumer(amqpURI, queueName)
 	if err != nil {
-		fmt.Errorf("%s", err)
+		return fmt.Errorf("%s", err)
 	}
 	defer func() {
 		if err := c.shutdown(); err != nil {
@@ -90,7 +102,7 @@ func Subscribe(amqpURI string, queueName string, h interface{}) error {
 		d := <-c.delivery
 		if json.Unmarshal(d.Body, h); err != nil {
 			d.Reject(true)
-			return nil
+			return MismatchMessageFormatError{}
 		}
 		if err := handler.Handle(); err != nil {
 			d.Reject(true)
