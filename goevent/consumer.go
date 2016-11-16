@@ -100,14 +100,17 @@ func Subscribe(amqpURI string, queueName string, h interface{}) error {
 
 	for {
 		d := <-c.delivery
-		if json.Unmarshal(d.Body, h); err != nil {
-			d.Reject(true)
-			return MismatchMessageFormatError{}
-		}
-		if err := handler.Handle(); err != nil {
-			d.Reject(true)
-		} else {
+		go func() {
+			log.Println(d.DeliveryTag)
+			if json.Unmarshal(d.Body, h); err != nil {
+				d.Reject(true)
+				return
+			}
+			if err := handler.Handle(); err != nil {
+				d.Reject(true)
+				return
+			}
 			d.Ack(false)
-		}
+		}()
 	}
 }

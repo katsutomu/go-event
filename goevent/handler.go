@@ -1,6 +1,9 @@
 package goevent
 
-import "fmt"
+import (
+	"log"
+	"time"
+)
 
 type Handler interface {
 	Handle() error
@@ -11,6 +14,7 @@ type TestHandler struct {
 }
 
 func (t TestHandler) Handle() error {
-	fmt.Println(t)
+	log.Printf("handle:%v\n", t.Test)
+	time.Sleep(time.Second * 5)
 	return nil
 }
